@@ -8,7 +8,8 @@ RLMC = function(env, config) {
 
     self.Q = [];            // values array Q[x][y][a] = value of doing action a at (x,y)
     self.P = [];            // policy array P[x][y][a] = probability of doing action a at (x,y)
-
+    self.R = [];            // return array R[x][y][a] = temporary place holder for Q array
+    
     self.init = function() {
         // initialize all Q values to self.config.initialValue
         for (x=0; x<self.env.width; x++) {
@@ -28,6 +29,20 @@ RLMC = function(env, config) {
                 self.P[x].push([]);
                 for (a=0; a<self.env.actions.length; a++) {
                     self.P[x][y].push(1.0 / self.env.actions.length);
+                }
+            }
+        }
+    }
+    
+    //reset the boolean values for checking whether or not a (s, a) pair has been seen
+    self.resetBools = function() {
+        // initialize all Q values to self.config.initialValue
+        for (x=0; x<self.env.width; x++) {
+            self.Q.push([]);
+            for (y=0; y<self.env.height; y++) {
+                self.Q[x].push([]);
+                for (a=0; a<self.env.actions.length; a++) {
+                    self.Q[x][y].push(false); // has not been checked
                 }
             }
         }
@@ -81,6 +96,7 @@ RLMC = function(env, config) {
 
     // selects best action from the current policy
     self.selectActionFromPolicy = function(x, y) {
+      */
       bestActionValue = 0;
       bestAction = 0; // the current best action to take based on values
       for (var i = 0; i < self.P.length; i++) {
@@ -89,6 +105,7 @@ RLMC = function(env, config) {
           bestAction = i;
         }
       }
+      */
       //return bestAction
       return 3;
     }
@@ -122,6 +139,9 @@ RLMC = function(env, config) {
     //    none
     //
     self.updateValues = function(episode) {
+        for (t=0; t<episode.length; t++) {
+          self.resetBools();
+        }
         // value update pseudocode
         // for (t=0; t<episode.length; t++)
         //   R = sum rewards from t to the end of the episode
