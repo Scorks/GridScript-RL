@@ -169,13 +169,12 @@
 
         for (t=0; t<episode.length; t++) {
           var checkPair = [episode[t][0][0], episode[t][0][1], episode[t][2]];
-          if (!visitedPairs.includes(checkPair)) { // if (state, action) pair has not been visited
-            console.log("checked? No");
+          if (self.searchForArray(visitedPairs, checkPair) == -1) { // if (state, action) pair has not been visited
+            console.log("wasn't in there...");
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] += sum;
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = (self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] / 2);
             self.Q[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]];
             visitedPairs.push(checkPair);
-            console.log(visitedPairs);
             summedRewards.shift();
             sum = 0;
             for (i=0; i<summedRewards.length; i++) { // sum all rewards into the array
@@ -183,7 +182,7 @@
             }
           }
           else {
-            console.log()
+            console.log("was in there...");
           }
         }
         //   R = sum rewards from t to the end of the episode
@@ -191,6 +190,23 @@
         //   update Q with new target of R using self.config.stepSize
         return 1;
     }
+
+  // searches for an array (needle) within a 2D array (haystack)
+
+  self.searchForArray = function(haystack, needle) {
+    var i, j, current;
+    for(i = 0; i < haystack.length; ++i){
+      if(needle.length === haystack[i].length){
+        current = haystack[i];
+        for(j = 0; j < needle.length && needle[j] === current[j]; ++j);
+        if(j === needle.length)
+          return i;
+        }
+      }
+      return -1;
+    }
+
+  // sums all items within an array
 
   self.sum = function(input) {
 
@@ -223,7 +239,7 @@
         var visitedStates = [] // states that have been accounted for
         for (t=0; t<episode.length; t++) {
           // for (each state (x,y) in the episode)
-          if (!visitedStates.includes(episode[t][0])) { // if the state has not been visited before
+          if (self.searchForArray(visitedStates, episode[t][0]) == -1) { // if the state has not been visited before
               //   maxActionValue = get maximum action value from Q[x][y]
               var maxActionValue = 0;
               var maxActions = []; //   maxActions = [which actions gave maxActionValue]
@@ -238,7 +254,7 @@
                 }
               }
               for (a=0; a<self.env.actions.length; a++) { // for each action a
-                if (maxActions.includes(a)) { // if (a in maxActions)
+                if (self.searchForArray(maxActions, a) == -1) { // if (a in maxActions)
                   self.P[episode[t][0][0]][episode[t][0][1]][a] = 1.0 / maxActions.length;  // P[x][y][a] = 1.0/maxActions.length
                 }
                 else {
