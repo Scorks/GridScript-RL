@@ -59,10 +59,10 @@
               action = Math.floor(Math.random() * 4); // gets a random number between 0 and 3 (possible actions)
             }
             else {
-              action = self.selectActionFromPolicy(state[0], state[1]); // selects the best action for the given state
+              var action = self.selectActionFromPolicy(state[0], state[1]); // selects the best action for the given state
             }
              // 3. reward = self.env.getReward(state[0], state[1], action)
-            reward = self.env.getReward(state[0], state[1], action);
+            var reward = self.env.getReward(state[0], state[1], action);
              // 4. add [state, action, reward] to the episode
             episodeVals = [state, action, reward];
             // push current episode information into the episode array
@@ -77,12 +77,15 @@
 
      // selects best action from the current policy
     self.selectActionFromPolicy = function(x, y) {
-      /*
       bestActionValue = 0;
       bestAction = []; // the current best action to take based on values
       for (var i = 0; i<4; i++) {
         if (self.P[x][y][i] > bestActionValue) {
           bestActionValue = self.P[x][y][i];
+          bestAction = [];
+          bestAction.push(i);
+        }
+        else if (self.P[x][y][i] == bestActionValue) {
           bestAction.push(i);
         }
       }
@@ -90,33 +93,39 @@
         return bestAction[0]; // return the best action
       }
       else {
-        action = Math.floor(Math.random() * bestAction.length-1); // gets a random number between 0 and bestAction.length-1 (possible max actions)
+        action = Math.floor(Math.random() * bestAction.length); // gets a random number between 0 and bestAction.length-1 (possible max actions)
         return action;
       }
-      */
-      return 0;
     }
      // gets the next state given the current state and the chosen action
     self.getNextState = function(x, y, action) {
       if (action == 0) { // down
-        if (y == self.env.height) {
+        if (y == self.env.height-1) { // already at the bottom of the grid
+          return [x, y];
+        }
+        else if(defaultMap[x][y + 1] == 'X'){ // there is a wall in the way
           return [x, y];
         }
         else {
-          y = y - 1;
+          y = y + 1;
         }
-
       }
       else if (action == 1) { // up
         if (y == 0) {
           return [x, y];
         }
+        else if(defaultMap[x][y - 1] == 'X'){ // there is a wall in the way
+          return [x, y];
+        }
         else {
-         y = y + 1;
+         y = y - 1;
         }
       }
       else if (action == 2) { // left
         if (x == 0) {
+          return [x, y];
+        }
+        else if(defaultMap[x - 1][y] == 'X'){ // there is a wall in the way
           return [x, y];
         }
         else {
@@ -124,7 +133,10 @@
         }
       }
       else { // right
-        if (x == self.env.width) {
+        if (x == self.env.width-1) {
+          return [x, y];
+        }
+        else if(defaultMap[x + 1][y] == 'X'){ // there is a wall in the way
           return [x, y];
         }
         else {
@@ -152,22 +164,26 @@
         for (t=0; t<episode.length; t++) {
           summedRewards.push(episode[t][2]); // push all reward values into an array
         }
-        for (i=0; i<summedRewards.length; i++) { // sum all rewards into the array
-          sum = sum + summedRewards[i];
-        }
+
+        sum = self.sum(summedRewards);
 
         for (t=0; t<episode.length; t++) {
           var checkPair = [episode[t][0][0], episode[t][0][1], episode[t][2]];
           if (!visitedPairs.includes(checkPair)) { // if (state, action) pair has not been visited
+            console.log("checked? No");
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] += sum;
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = (self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] / 2);
             self.Q[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]];
             visitedPairs.push(checkPair);
+            console.log(visitedPairs);
             summedRewards.shift();
             sum = 0;
             for (i=0; i<summedRewards.length; i++) { // sum all rewards into the array
               sum = sum + summedRewards[i];
             }
+          }
+          else {
+            console.log()
           }
         }
         //   R = sum rewards from t to the end of the episode
@@ -175,6 +191,21 @@
         //   update Q with new target of R using self.config.stepSize
         return 1;
     }
+
+  self.sum = function(input) {
+
+    if (toString.call(input) !== "[object Array]")
+    return false;
+
+    var total =  0;
+    for(var i=0;i<input.length;i++) {
+                if(isNaN(input[i])){
+                continue;
+                 }
+                  total += Number(input[i]);
+               }
+             return total;
+            }
 
      // Student TODO: Implement this function
     //
