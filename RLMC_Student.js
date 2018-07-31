@@ -182,9 +182,6 @@
               sum = sum + summedRewards[i];
             }
           }
-          else {
-            console.log()
-          }
         }
         //   R = sum rewards from t to the end of the episode
         //   if (first time s,a appears in the episode)
