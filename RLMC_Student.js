@@ -14,7 +14,7 @@
             for (y=0; y<self.env.height; y++) {
                 self.Q[x].push([]);
                 for (a=0; a<self.env.actions.length; a++) {
-                    self.Q[x][y].push(self.config.initialValue);
+                    self.Q[x][y].push(0);
                 }
             }
         }
@@ -44,7 +44,6 @@
             isStateValid = false;
           }
         }
-        console.log(state);
          // generate an episode with an upper bound on time
         for (t=0; t<self.config.maxEpisodeTime; t++) {
             // episode generation pseudocode
@@ -62,8 +61,9 @@
             }
              // 3. reward = self.env.getReward(state[0], state[1], action)
             var reward = self.env.getReward(state[0], state[1], action);
+
              // 4. add [state, action, reward] to the episode
-            episodeVals = [state, action, reward];
+            episodeVals = [[state[0], state[1]], action, reward];
             // push current episode information into the episode array
             episode.push(episodeVals);
              // 5. state = getNextState(state[0], state[1], action)
@@ -121,36 +121,33 @@
     //
     self.updateValues = function(episode) {
         // value update pseudocode
-        for (t=0; t<episode.length; t++) {
-          x = episode[t][0][0];
-          y = episode[t][0][1];
-          action = episode[t][0][1];
-        }
 
-
-        summedRewards = [];
-        visitedPairs = []; // visited (state, action) pairs
         var sum = 0; // sum from t to the end of the episode
         for (t=0; t<episode.length; t++) {
-          summedRewards.push(episode[t][2]); // push all reward values into an array
+          sum += episode[t][2];
+        }
+        // 2D array keeping track of visited states
+        visitedPairs = [];
+        for (x=0; x<self.env.width; x++) {
+            visitedPairs.push([]);
+            for (y=0; y<self.env.height; y++) {
+                visitedPairs[x].push([]);
+                for (a=0; a<self.env.actions.length; a++) {
+                    visitedPairs[x][y].push(false);
+                }
+            }
         }
 
-        sum = self.sum(summedRewards);
-
         for (t=0; t<episode.length; t++) {
-          var checkPair = [episode[t][0][0], episode[t][0][1], episode[t][2]];
-          if (self.searchForArray(visitedPairs, checkPair) == -1) { // if (state, action) pair has not been visited
-            self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] += sum;
-            self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = (self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] / 2);
-            self.Q[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]];
-            visitedPairs.push(checkPair);
-            summedRewards.shift();
-            sum = 0;
-            for (i=0; i<summedRewards.length; i++) { // sum all rewards into the array
-              sum = sum + summedRewards[i];
-            }
-          }
-          else {
+          x = episode[t][0][0]; // x-coordinate of current position
+          y = episode[t][0][1]; // y-coordinate of current position
+          action = episode[t][1]; // action from the episode slice
+          currentReward = episode[t][2];
+
+          sum = sum - currentReward;
+          if (visitedPairs[x][y][action] == false) { // if this is our first time visiting this (state, action) pair
+            self.Q[x][y][action] = self.Q[x][y][action] + (self.config.stepSize * (currentReward + sum - self.Q[x][y][action]));
+            visitedPairs[x][y][action] = true; // set visited to true so we don't update this Q value again during this episode
           }
         }
         //   R = sum rewards from t to the end of the episode
@@ -175,7 +172,6 @@
     }
 
   // sums all items within an array
-
   self.sum = function(input) {
 
     if (toString.call(input) !== "[object Array]")
@@ -183,13 +179,13 @@
 
     var total =  0;
     for(var i=0;i<input.length;i++) {
-                if(isNaN(input[i])){
-                continue;
-                 }
-                  total += Number(input[i]);
-               }
-             return total;
-            }
+      if(isNaN(input[i])){
+        continue;
+      }
+        total += Number(input[i]);
+      }
+      return total;
+    }
 
      // Student TODO: Implement this function
     //
@@ -203,34 +199,46 @@
     //    none
     //
     self.updatePolicy = function(episode) {
-        // policy update pseudocode
-        var visitedStates = [] // states that have been accounted for
-        for (t=0; t<episode.length; t++) {
-          // for (each state (x,y) in the episode)
-          if (self.searchForArray(visitedStates, episode[t][0]) == -1) { // if the state has not been visited before
-              //   maxActionValue = get maximum action value from Q[x][y]
-              var maxActionValue = 0;
-              var maxActions = []; //   maxActions = [which actions gave maxActionValue]
-              for (a=0; a<self.Q[episode[t][0][0]][episode[t][0][1]].length; a++) { // for action a in self.Q[x][y]
-                if (self.Q[episode[t][0][0]][episode[t][0][1]][a] > maxActionValue) { // if Q value of a > maxActionValue
-                  maxActionValue = self.Q[episode[t][0][0]][episode[t][0][1]][a]; // update maxActionValue
-                  maxActions = [] // reset maxActions array
-                  maxActions.push(a); // push the new value
-                }
-                else if (self.Q[episode[t][0][0]][episode[t][0][1]][a] == maxActionValue) {
-                  maxActions.push(a); // push the new value
-                }
+
+      // 2D array keeping track of visited states
+      visitedPairs = [];
+      for (x=0; x<self.env.width; x++) {
+          visitedPairs.push([]);
+          for (y=0; y<self.env.height; y++) {
+              visitedPairs[x].push([]);
+              for (a=0; a<self.env.actions.length; a++) {
+                  visitedPairs[x][y].push(false);
               }
-              for (a=0; a<self.env.actions.length; a++) { // for each action a
-                if (self.searchForArray(maxActions, a) == -1) { // if (a in maxActions)
-                  self.P[episode[t][0][0]][episode[t][0][1]][a] = 1.0 / maxActions.length;  // P[x][y][a] = 1.0/maxActions.length
-                }
-                else {
-                  self.P[episode[t][0][0]][episode[t][0][1]][a] = 0; // else P[x][y][a] = 0
-                }
-              }
+          }
+      }
+
+      for (t=0; t<episode.length; t++) {
+        x = episode[t][0][0]; // x-coordinate of current position
+        y = episode[t][0][1]; // y-coordinate of current position
+        action = episode[t][1]; // action from the episode slice
+
+        if (visitedPairs[x][y][action] == false) { // if the state has not been visited before
+          // maxActionValue = get maximum action value from Q[x][y]
+          maxVal = -1000000;
+          maxIndices = []
+          for (a=0; a<self.env.actions.length; a++){
+            if (self.Q[x][y][a] > maxVal) {
+              maxVal = self.Q[x][y][a];
+              maxIndices = [];
+              maxIndices.push(a);
             }
-            visitedStates.push(episode[t][0]); // note that this state has already been visited
+            else if (self.Q[x][y][a] == maxVal) { // if it is equal
+              maxIndices.push(a);
+            }
+            }
+          }
+          for (a=0; a<self.env.actions.length; a++) {
+            self.P[x][y][a] = 0;
+            }
+          for (a=0; a<maxIndices.length; a++) {
+            self.P[x][y][maxIndices[a]] = 1.0 / maxIndices.length
+          }
+          visitedPairs[x][y][action] = true;
           }
         }
      self.init();
