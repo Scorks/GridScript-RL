@@ -22,7 +22,7 @@ Environment = function (array) {
     self.isOOB = function (x, y) {
         return x < 0 || y < 0 || x >= self.width || y >= self.height;
     }
-    
+
     self.isBlocked = function(x, y) {
         return self.get(x, y) == 'X';
     }
