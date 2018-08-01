@@ -146,7 +146,7 @@
 
           sum = sum - currentReward;
           if (visitedPairs[x][y][action] == false) { // if this is our first time visiting this (state, action) pair
-            self.Q[x][y][action] = self.Q[x][y][action] + (self.config.stepSize * (currentReward + sum - self.Q[x][y][action]));
+            self.Q[x][y][action] = Math.round(self.Q[x][y][action] + (self.config.stepSize * (currentReward + sum - self.Q[x][y][action])));
             visitedPairs[x][y][action] = true; // set visited to true so we don't update this Q value again during this episode
           }
         }
