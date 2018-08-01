@@ -6,7 +6,6 @@
     self.env = env;         // the environment we will learn about
     self.Q = [];            // values array Q[x][y][a] = value of doing action a at (x,y)
     self.P = [];            // policy array P[x][y][a] = probability of doing action a at (x,y)
-    self.R = [];            // Results array R[x][y][a] = averaging for self.Q at (x,y) and action a
 
      self.init = function() {
         // initialize all Q values to self.config.initialValue
@@ -29,34 +28,34 @@
                 }
             }
         }
-        // initialize Results array with 0s
-       for (x=0; x<self.env.width; x++) {
-           self.R.push([]);
-           for (y=0; y<self.env.height; y++) {
-               self.R[x].push([]);
-               for (a=0; a<self.env.actions.length; a++) {
-                   self.R[x][y].push(0);
-               }
-           }
-       }
     }
+
      self.generateEpisode = function() {
         // the episode should be in the following format:
         // episode[i] = [[state i x, state i y], action i, reward i]
         let episode = [];
+
          // state is represented as [x, y]
         let state = [0, 0]; // initialize to a random non-blocked state in the environment
+        var isStateValid = true;
+        while (isStateValid) {
+          state = [Math.floor(Math.random()*(self.env.width-1)) + 1, Math.floor(Math.random()*(self.env.height-1)) + 1];
+          if (!self.env.isBlocked(state[0], state[1])) {
+            isStateValid = false;
+          }
+        }
+        console.log(state);
          // generate an episode with an upper bound on time
         for (t=0; t<self.config.maxEpisodeTime; t++) {
             // episode generation pseudocode
             // references to functions not present should be implemented for convenience
              // 1. If this is a terminal state, end the episode
-            if (defaultMap[state[0]][state[1]] == 'T') { // if we are currently in a terminal state
-              return episode; // end the episode
+            if (self.env.isTerminal(state[0], state[1])) { // if we are currently in a terminal state
+              break; // end the episode
             }
             // first action chosen each episode should be random (exploring start)
             if (t == 0) {
-              action = Math.floor(Math.random() * 4); // gets a random number between 0 and 3 (possible actions)
+              action = Math.floor(Math.random() * self.env.actions.length); // gets a random number between 0 and 3 (possible actions)
             }
             else {
               var action = self.selectActionFromPolicy(state[0], state[1]); // selects the best action for the given state
@@ -73,13 +72,14 @@
          // return the episode
         return episode;
     }
+
  //---------------------------------------------------------------------------------------------------------
 
      // selects best action from the current policy
     self.selectActionFromPolicy = function(x, y) {
       bestActionValue = 0;
       bestAction = []; // the current best action to take based on values
-      for (var i = 0; i<4; i++) {
+      for (var i = 0; i<self.env.actions.length; i++) {
         if (self.P[x][y][i] > bestActionValue) {
           bestActionValue = self.P[x][y][i];
           bestAction = [];
@@ -99,51 +99,14 @@
     }
      // gets the next state given the current state and the chosen action
     self.getNextState = function(x, y, action) {
-      if (action == 0) { // down
-        if (y == self.env.height-1) { // already at the bottom of the grid
-          return [x, y];
-        }
-        else if(defaultMap[x][y + 1] == 'X'){ // there is a wall in the way
-          return [x, y];
-        }
-        else {
-          y = y + 1;
-        }
+      next_x = x + self.env.actions[action][0];
+      next_y = y + self.env.actions[action][1];
+      if (self.env.isOOB(next_x, next_y) || self.env.isBlocked(next_x, next_y)) {
+        return [x, y];
       }
-      else if (action == 1) { // up
-        if (y == 0) {
-          return [x, y];
-        }
-        else if(defaultMap[x][y - 1] == 'X'){ // there is a wall in the way
-          return [x, y];
-        }
-        else {
-         y = y - 1;
-        }
+      else {
+        return [next_x, next_y];
       }
-      else if (action == 2) { // left
-        if (x == 0) {
-          return [x, y];
-        }
-        else if(defaultMap[x - 1][y] == 'X'){ // there is a wall in the way
-          return [x, y];
-        }
-        else {
-          x = x - 1;
-        }
-      }
-      else { // right
-        if (x == self.env.width-1) {
-          return [x, y];
-        }
-        else if(defaultMap[x + 1][y] == 'X'){ // there is a wall in the way
-          return [x, y];
-        }
-        else {
-          x = x + 1;
-        }
-      }
-      return [x, y];
     }
      // Student TODO: Implement this function
     //
@@ -158,6 +121,13 @@
     //
     self.updateValues = function(episode) {
         // value update pseudocode
+        for (t=0; t<episode.length; t++) {
+          x = episode[t][0][0];
+          y = episode[t][0][1];
+          action = episode[t][0][1];
+        }
+
+
         summedRewards = [];
         visitedPairs = []; // visited (state, action) pairs
         var sum = 0; // sum from t to the end of the episode
@@ -169,18 +139,18 @@
 
         for (t=0; t<episode.length; t++) {
           var checkPair = [episode[t][0][0], episode[t][0][1], episode[t][2]];
-          if (!visitedPairs.includes(checkPair)) { // if (state, action) pair has not been visited
-            console.log("checked? No");
+          if (self.searchForArray(visitedPairs, checkPair) == -1) { // if (state, action) pair has not been visited
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] += sum;
             self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = (self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]] / 2);
             self.Q[episode[t][0][0]][episode[t][0][1]][episode[t][2]] = self.R[episode[t][0][0]][episode[t][0][1]][episode[t][2]];
             visitedPairs.push(checkPair);
-            console.log(visitedPairs);
             summedRewards.shift();
             sum = 0;
             for (i=0; i<summedRewards.length; i++) { // sum all rewards into the array
               sum = sum + summedRewards[i];
             }
+          }
+          else {
           }
         }
         //   R = sum rewards from t to the end of the episode
@@ -188,6 +158,23 @@
         //   update Q with new target of R using self.config.stepSize
         return 1;
     }
+
+  // searches for an array (needle) within a 2D array (haystack)
+
+  self.searchForArray = function(haystack, needle) {
+    var i, j, current;
+    for(i = 0; i < haystack.length; ++i){
+      if(needle.length === haystack[i].length){
+        current = haystack[i];
+        for(j = 0; j < needle.length && needle[j] === current[j]; ++j);
+        if(j === needle.length)
+          return i;
+        }
+      }
+      return -1;
+    }
+
+  // sums all items within an array
 
   self.sum = function(input) {
 
@@ -220,7 +207,7 @@
         var visitedStates = [] // states that have been accounted for
         for (t=0; t<episode.length; t++) {
           // for (each state (x,y) in the episode)
-          if (!visitedStates.includes(episode[t][0])) { // if the state has not been visited before
+          if (self.searchForArray(visitedStates, episode[t][0]) == -1) { // if the state has not been visited before
               //   maxActionValue = get maximum action value from Q[x][y]
               var maxActionValue = 0;
               var maxActions = []; //   maxActions = [which actions gave maxActionValue]
@@ -235,7 +222,7 @@
                 }
               }
               for (a=0; a<self.env.actions.length; a++) { // for each action a
-                if (maxActions.includes(a)) { // if (a in maxActions)
+                if (self.searchForArray(maxActions, a) == -1) { // if (a in maxActions)
                   self.P[episode[t][0][0]][episode[t][0][1]][a] = 1.0 / maxActions.length;  // P[x][y][a] = 1.0/maxActions.length
                 }
                 else {
