@@ -80,7 +80,7 @@ RLGUI = function (container, map) {
         self.chart = Highcharts.chart('ChartDiv', {
 			chart: { animation: false, zoomType: 'xy', type: 'line' },
 			title: { text: 'Puck Delivery Chart' },
-			yAxis: { title: { text: 'Value' } },
+			yAxis: { title: { text: 'Steps to Terminal' } },
 			xAxis: { title: { text: 'Episode' } },
 			legend: { layout: 'vertical', align: 'right', verticalAlign: 'middle' },
             series: []

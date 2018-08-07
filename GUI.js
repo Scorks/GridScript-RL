@@ -1,7 +1,3 @@
-// Basic JavaScript HTML5 GUI Helper Functions
-// Author: David Churchill, Memorial University
-//         dave.churchill@gmail.com
-
 GUI = function (container) {
 
     var self = {};
