@@ -2,10 +2,13 @@ RLMC = function(env, config) {
     var self = {};
     self.config = config;   // learning configuration settings
     self.env = env;         // the environment we will learn about
-        
+
     self.Q = [];            // values array Q[x][y][px][py][a] = value of doing action a at (x,y)
     self.P = [];            // policy array P[x][y][px][py][a] = probability of doing action a at (x,y)
-    
+
+    self.count = 0;
+    self.terminalCounter = [];
+
     self.init = function() {
         // initialize all Q values to self.config.initialValue
         for (x=0; x<self.env.width; x++) {
@@ -23,7 +26,7 @@ RLMC = function(env, config) {
                         }
                     }
                 }
-                
+
             }
         }
 
@@ -43,8 +46,15 @@ RLMC = function(env, config) {
                         }
                     }
                 }
-                
+
             }
+        }
+
+        // initialize all P
+        for (x=0; x<self.env.episodes; x++) {
+            self.terminalCounter.push([]);
+            self.terminalCounter[x].push([]);
+            self.terminalCounter[x].push([]);
         }
     }
 
@@ -76,7 +86,7 @@ RLMC = function(env, config) {
     self.getNextState = function(x, y, px, py, a) {
         let nx = x + self.env.actions[a][0];
         let ny = y + self.env.actions[a][1];
-        
+
         // if the action leads us off the board or onto a blocked state, stay where we are
         if (self.env.isOOB(nx, ny) || self.env.isBlocked(nx, ny)) {
             return [x, y, px, py];
@@ -101,22 +111,26 @@ RLMC = function(env, config) {
 
     self.generateEpisode = function() {
         let episode = [];
-        
-        let state = [Math.floor(Math.random()*self.env.width),  
+
+        let state = [Math.floor(Math.random()*self.env.width),
             Math.floor(Math.random()*self.env.height),
             Math.floor(Math.random()*self.env.width),
             Math.floor(Math.random()*self.env.height)];
 
         while (self.env.isBlocked(state[0], state[1]) || self.env.isBlocked(state[2], state[3]))
         {
-            state = [Math.floor(Math.random()*self.env.width),  
+            state = [Math.floor(Math.random()*self.env.width),
                 Math.floor(Math.random()*self.env.height),
                 Math.floor(Math.random()*self.env.width),
                 Math.floor(Math.random()*self.env.height)];
         }
 
         for (t=0; t<self.config.maxEpisodeTime; t++) {
-            if (self.env.isTerminal(state[2], state[3])) { break; }
+            if (self.env.isTerminal(state[2], state[3])) {
+              self.terminalCounter[self.count] = [true, t];
+              self.count = self.count + 1;
+              return episode;
+            }
 
             let action = self.selectActionFromPolicy(state[0], state[1], state[2], state[3]);
 
@@ -130,7 +144,8 @@ RLMC = function(env, config) {
             episode.push(triplet);
             state = self.getNextState(state[0], state[1], state[2], state[3], action);
         }
-
+        self.terminalCounter[self.count] = [false, self.config.maxEpisodeTime];
+        self.count = self.count + 1;
         return episode;
     }
 
@@ -144,8 +159,8 @@ RLMC = function(env, config) {
             let y = state[1];
             let px = state[2];
             let py = state[3];
-            
-            self.Q[x][y][px][py][a] += (self.config.stepSize) * (R - self.Q[x][y][px][py][a]);        
+
+            self.Q[x][y][px][py][a] += (self.config.stepSize) * (R - self.Q[x][y][px][py][a]);
         }
     }
 
@@ -161,7 +176,7 @@ RLMC = function(env, config) {
             let y = state[1];
             let px = state[2];
             let py = state[3];
-            
+
             let maxVal = -100000;
             let values = self.Q[x][y][px][py];
             for (a=0; a<values.length; a++) {
@@ -183,7 +198,7 @@ RLMC = function(env, config) {
 
             for (a=0; a<maxActions.length; a++) {
                 self.P[x][y][px][py][maxActions[a]] = 1.0 / maxActions.length;
-            }     
+            }
         }
     }
 
