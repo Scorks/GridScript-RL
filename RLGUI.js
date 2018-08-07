@@ -139,7 +139,7 @@ RLGUI = function (container, map) {
 
         count = 0;
 
-        var key = "P-Iter" + self.count;
+        var key = "P-Iter";
 
         count = count + 1;
 
@@ -188,7 +188,7 @@ RLGUI = function (container, map) {
         self.controlDiv = self.create('div', 'ControlContainer',   self.fg.width + 30,  60, 400, 600);
         self.chartDiv   = self.create('div', 'ChartDiv',         200,   800, 800, 450);
 
-        self.bannerDiv.innerHTML  = "<b>GridWorld Monte-Carlo ES RL - <a href='http://www.cs.mun.ca/~dchurchill/'>David Churchill</a>";
+        self.bannerDiv.innerHTML  = "<b>GridWorld Monte-Carlo ES RL - Puck Movement</a>";
         self.controlDiv.innerHTML += "<label id='labelmouse'>Mouse Mode:</label>";
         self.controlDiv.innerHTML += "<label id='labelstep'>Step Size:</label>";
         self.controlDiv.innerHTML += "<label id='labeleps'>Epsilon:</label>";
