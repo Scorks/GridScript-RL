@@ -1,2 +1,6 @@
-# GridScript
-COMP-6912 (Robotics) Project
+## PuckScript
+
+# Running Instructions
+
+To run, simply open index.html in your preferred browser.
+:japanese_goblin:
